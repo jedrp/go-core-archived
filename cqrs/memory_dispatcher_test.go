@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"bitbucket.org/JedHuynhThanh/go-core/cqrs"
-	"bitbucket.org/JedHuynhThanh/go-core/cqrs/mocks"
+	"github.com/HoaHuynhSoft/go-core/cqrs"
+	"github.com/HoaHuynhSoft/go-core/cqrs/mocks"
 )
 
 func BenchmarkRegisterHandler(b *testing.B) {

@@ -3,7 +3,7 @@ package cqrs
 import (
 	"context"
 
-	"bitbucket.org/JedHuynhThanh/go-core/infrastructures"
+	"github.com/HoaHuynhSoft/go-core/infrastructures"
 )
 
 // IHandler ...
