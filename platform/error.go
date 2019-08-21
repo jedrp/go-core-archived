@@ -4,27 +4,20 @@ type plError interface {
 	GetCode() string
 	GetOriginError() error
 	GetErrorMessage() string
+	SetCode(code string)
+	SetError(err error)
+	SetMessage(msg string)
 }
 
 //Error wrapper
-type Error struct {
+type errorObj struct {
 	OriginError  error  //the origin error causing problem
 	ErrorCode    string //System specific error code
 	ErrorMessage string //System specfic error message
 }
 
-func (err *Error) GetCode() string {
-	return err.ErrorCode
-}
-func (err *Error) GetOriginError() error {
-	return err.OriginError
-}
-func (err *Error) GetErrorMessage() string {
-	return err.ErrorMessage
-}
-
 //ValidationError ..
-type ValidationError Error
+type ValidationError errorObj
 
 func (err *ValidationError) GetCode() string {
 	return err.ErrorCode
@@ -35,9 +28,18 @@ func (err *ValidationError) GetOriginError() error {
 func (err *ValidationError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+func (err *ValidationError) SetCode(code string) {
+	err.ErrorCode = code
+}
+func (err *ValidationError) SetError(orgError error) {
+	err.OriginError = orgError
+}
+func (err *ValidationError) SetMessage(msg string) {
+	err.ErrorMessage = msg
+}
 
 //NotFoundError ..
-type NotFoundError Error
+type NotFoundError errorObj
 
 func (err *NotFoundError) GetCode() string {
 	return err.ErrorCode
@@ -48,9 +50,18 @@ func (err *NotFoundError) GetOriginError() error {
 func (err *NotFoundError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+func (err *NotFoundError) SetCode(code string) {
+	err.ErrorCode = code
+}
+func (err *NotFoundError) SetError(orgError error) {
+	err.OriginError = orgError
+}
+func (err *NotFoundError) SetMessage(msg string) {
+	err.ErrorMessage = msg
+}
 
 //InternalServerError ..
-type InternalServerError Error
+type InternalServerError errorObj
 
 func (err *InternalServerError) GetCode() string {
 	return err.ErrorCode
@@ -61,9 +72,18 @@ func (err *InternalServerError) GetOriginError() error {
 func (err *InternalServerError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+func (err *InternalServerError) SetCode(code string) {
+	err.ErrorCode = code
+}
+func (err *InternalServerError) SetError(orgError error) {
+	err.OriginError = orgError
+}
+func (err *InternalServerError) SetMessage(msg string) {
+	err.ErrorMessage = msg
+}
 
 //UnkownError ..
-type UnkownError Error
+type UnkownError errorObj
 
 func (err *UnkownError) GetCode() string {
 	return err.ErrorCode
@@ -73,4 +93,13 @@ func (err *UnkownError) GetOriginError() error {
 }
 func (err *UnkownError) GetErrorMessage() string {
 	return err.ErrorMessage
+}
+func (err *UnkownError) SetCode(code string) {
+	err.ErrorCode = code
+}
+func (err *UnkownError) SetError(orgError error) {
+	err.OriginError = orgError
+}
+func (err *UnkownError) SetMessage(msg string) {
+	err.ErrorMessage = msg
 }
