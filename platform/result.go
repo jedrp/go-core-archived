@@ -60,6 +60,7 @@ func newErrorResult(errWrapper plError, err error, opts []string) plError {
 		errWrapper.SetMessage(opts[1])
 	case optsLength > 0:
 		errWrapper.SetCode(opts[0])
+		errWrapper.SetMessage(err.Error())
 	default:
 		errWrapper.SetCode("UNKNOWN_ERROR")
 		errWrapper.SetMessage(err.Error())
