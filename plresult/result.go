@@ -1,4 +1,4 @@
-package platform
+package plresult
 
 import (
 	"net/http"

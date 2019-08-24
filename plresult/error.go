@@ -1,4 +1,4 @@
-package platform
+package plresult
 
 type plError interface {
 	GetCode() string

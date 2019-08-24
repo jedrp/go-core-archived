@@ -10,12 +10,12 @@ import (
 )
 
 func BenchmarkRegisterHandler(b *testing.B) {
-	dispatcher := cqrs.NewInMemoryDispatcher()
+	dispatcher := cqrs.NewInMemoryDispatcher(nil)
 	dispatcher.RegisterHandler(context.TODO(), &mocks.IHandler{}, &mocks.ICommand{})
 }
 
 func TestCallingHandler(t *testing.T) {
-	dispatcher := cqrs.NewInMemoryDispatcher()
+	dispatcher := cqrs.NewInMemoryDispatcher(nil)
 	dispatcher.RegisterHandler(context.TODO(), &mocks.IHandler{}, &mocks.ICommand{})
 
 	res := dispatcher.Dispatch(context.TODO(), &mocks.ICommand{})

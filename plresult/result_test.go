@@ -1,29 +1,29 @@
-package platform_test
+package plresult_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/HoaHuynhSoft/go-core/platform"
+	"github.com/HoaHuynhSoft/go-core/plresult"
 )
 
 func TestValidationErrorResult(t *testing.T) {
 	tt := []struct {
-		Result          *platform.Result
+		Result          *plresult.Result
 		expectCode      string
 		expectedMessage string
 	}{
-		{platform.ValidationErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
-		{platform.ValidationErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
-		{platform.ValidationErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
+		{plresult.ValidationErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
+		{plresult.ValidationErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
+		{plresult.ValidationErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
 
-		{platform.NotFoundErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
-		{platform.NotFoundErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
-		{platform.NotFoundErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
+		{plresult.NotFoundErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
+		{plresult.NotFoundErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
+		{plresult.NotFoundErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
 
-		{platform.InternalErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
-		{platform.InternalErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
-		{platform.InternalErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
+		{plresult.InternalErrorResult(errors.New("Jed_Test")), "UNKNOWN_ERROR", "Jed_Test"},
+		{plresult.InternalErrorResult(errors.New("Jed_Test"), "CODE_1"), "CODE_1", "Jed_Test"},
+		{plresult.InternalErrorResult(errors.New("Jed_Test"), "CODE_1", "MESSAGE_1"), "CODE_1", "MESSAGE_1"},
 	}
 
 	for _, tc := range tt {
@@ -61,7 +61,7 @@ func TestSuccessResult(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		result := platform.OKResult(tc)
+		result := plresult.OKResult(tc)
 		if result.Value != tc {
 			t.Errorf("value of the result must be the object have been set %v but got %v", tc, result.Value)
 		}

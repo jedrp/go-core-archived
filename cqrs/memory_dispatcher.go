@@ -2,21 +2,25 @@ package cqrs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
-	"github.com/HoaHuynhSoft/go-core/infrastructures"
+	"github.com/HoaHuynhSoft/go-core/pllog"
+	"github.com/HoaHuynhSoft/go-core/plresult"
 )
 
 // InMemoryDispatcher ...
 type InMemoryDispatcher struct {
 	handlers map[string]IHandler
+	logger   pllog.PlLogger
 }
 
 // NewInMemoryDispatcher ...
-func NewInMemoryDispatcher() *InMemoryDispatcher {
+func NewInMemoryDispatcher(loggerImpl pllog.PlLogger) *InMemoryDispatcher {
 	b := &InMemoryDispatcher{
 		handlers: make(map[string]IHandler),
+		logger:   loggerImpl,
 	}
 	return b
 }
@@ -35,10 +39,14 @@ func (d *InMemoryDispatcher) RegisterHandler(ctx context.Context, handler IHandl
 }
 
 // Dispatch ...
-func (d *InMemoryDispatcher) Dispatch(ctx context.Context, command interface{}) *infrastructures.Result {
+func (d *InMemoryDispatcher) Dispatch(ctx context.Context, command interface{}) *plresult.Result {
 	typeName := reflect.TypeOf(command).String()
 	if handler, ok := d.handlers[typeName]; ok {
-		return handler.Handle(ctx, command)
+		result := handler.Handle(ctx, command)
+		if d.logger != nil && !result.IsSuccess {
+			d.logger.Error(result.Error.GetOriginError())
+		}
+		return result
 	}
-	return &infrastructures.Result{IsSuccess: false, Value: "Can not find handler"}
+	return plresult.InternalErrorResult(errors.New("InMemoryDispatcher can't find handler"), "MISING_HANDLER_IMPL")
 }
