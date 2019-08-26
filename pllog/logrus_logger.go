@@ -81,8 +81,9 @@ const (
 )
 
 func CreateLogEntryFromContext(ctx context.Context, log PlLogger) PlLogentry {
+	fmt.Println("rid", ctx.Value("RequestId").(string))
 	return log.WithFields(map[string]interface{}{
-		CorrelationID: ctx.Value(CorrelationID),
-		RequestID:     ctx.Value(RequestID),
+		//CorrelationID: ctx.Value(CorrelationID).(string),
+		RequestID: ctx.Value("RequestId").(string),
 	})
 }

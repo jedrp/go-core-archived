@@ -33,9 +33,9 @@ func NewLogContext(r *http.Request) {
 	reqID := r.Header.Get(pllog.RequestIDHeaderKey)
 	fmt.Println(reqID)
 	if reqID != "" {
-		context.WithValue(ctx, pllog.RequestID, reqID)
+		context.WithValue(ctx, "RequestId", reqID)
 	} else {
-		context.WithValue(ctx, pllog.RequestID, uuid.NewV4().String())
+		context.WithValue(ctx, "RequestId", uuid.NewV4().String())
 	}
 
 	corID := r.Header.Get(pllog.CorrelationIDHeaderKey)
