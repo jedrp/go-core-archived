@@ -15,6 +15,8 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 		NewLogContext(r)
 		defer func() {
 			if rErr := recover(); rErr != nil {
+				ctx := r.Context()
+				fmt.Println("rid", ctx.Value("RequestId"))
 				if logger != nil {
 					pllog.CreateLogEntryFromContext(r.Context(), logger).Error(rErr)
 				}
