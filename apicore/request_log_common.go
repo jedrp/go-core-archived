@@ -3,6 +3,7 @@ package apicore
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/HoaHuynhSoft/go-core/pllog"
@@ -11,11 +12,11 @@ import (
 
 func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewLogContext(r)
+		NewLogContext(r)
 		defer func() {
-			if r := recover(); r != nil {
+			if rErr := recover(); rErr != nil {
 				if logger != nil {
-					pllog.CreateLogEntryFromContext(ctx, logger).Error(r)
+					pllog.CreateLogEntryFromContext(r.Context(), logger).Error(rErr)
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(500)
@@ -23,13 +24,14 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 				w.Write(response)
 			}
 		}()
-		handler.ServeHTTP(w, r.WithContext(ctx))
+		handler.ServeHTTP(w, r)
 	})
 }
 
-func NewLogContext(r *http.Request) context.Context {
+func NewLogContext(r *http.Request) {
 	ctx := r.Context()
 	reqID := r.Header.Get(pllog.RequestIDHeaderKey)
+	fmt.Println(reqID)
 	if reqID != "" {
 		context.WithValue(ctx, pllog.RequestID, reqID)
 	} else {
@@ -40,5 +42,4 @@ func NewLogContext(r *http.Request) context.Context {
 	if corID != "" {
 		context.WithValue(ctx, pllog.CorrelationID, corID)
 	}
-	return ctx
 }
