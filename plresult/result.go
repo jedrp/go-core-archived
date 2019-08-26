@@ -54,6 +54,7 @@ func NotFoundErrorResult(err error, opts ...string) *Result {
 
 func newErrorResult(errWrapper plError, err error, opts []string) plError {
 	optsLength := len(opts)
+	errWrapper.SetError(err)
 	switch {
 	case optsLength > 1:
 		errWrapper.SetCode(opts[0])
