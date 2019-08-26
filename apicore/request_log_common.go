@@ -12,7 +12,7 @@ import (
 
 func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		NewLogContext(r)
+		ctx := NewLogContext(r)
 		defer func() {
 			if rErr := recover(); rErr != nil {
 				ctx := r.Context()
@@ -26,22 +26,23 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 				w.Write(response)
 			}
 		}()
-		handler.ServeHTTP(w, r)
+		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func NewLogContext(r *http.Request) {
+func NewLogContext(r *http.Request) context.Context {
 	ctx := r.Context()
 	reqID := r.Header.Get(pllog.RequestIDHeaderKey)
 	fmt.Println(reqID)
 	if reqID != "" {
-		context.WithValue(ctx, "RequestId", reqID)
+		ctx = context.WithValue(ctx, "RequestId", reqID)
 	} else {
-		context.WithValue(ctx, "RequestId", uuid.NewV4().String())
+		ctx = context.WithValue(ctx, "RequestId", uuid.NewV4().String())
 	}
 
 	corID := r.Header.Get(pllog.CorrelationIDHeaderKey)
 	if corID != "" {
-		context.WithValue(ctx, pllog.CorrelationID, corID)
+		ctx = context.WithValue(ctx, pllog.CorrelationID, corID)
 	}
+	return ctx
 }
