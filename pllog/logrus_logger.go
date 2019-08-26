@@ -1,6 +1,7 @@
 package pllog
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -70,4 +71,18 @@ func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
 
 func (logrusLogger *LogrusLogger) WithFields(fields map[string]interface{}) PlLogentry {
 	return logrusLogger.Logger.WithFields(fields)
+}
+
+const (
+	RequestIDHeaderKey     = "Request-Id"
+	CorrelationIDHeaderKey = "Correlation-Id"
+	RequestID              = "RequestId"
+	CorrelationID          = "CorrelationId"
+)
+
+func CreateLogEntryFromContext(ctx context.Context, log PlLogger) PlLogentry {
+	return log.WithFields(map[string]interface{}{
+		CorrelationID: ctx.Value(CorrelationID),
+		RequestID:     ctx.Value(RequestID),
+	})
 }

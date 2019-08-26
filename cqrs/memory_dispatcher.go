@@ -44,7 +44,7 @@ func (d *InMemoryDispatcher) Dispatch(ctx context.Context, command interface{}) 
 	if handler, ok := d.handlers[typeName]; ok {
 		result := handler.Handle(ctx, command)
 		if d.logger != nil && !result.IsSuccess {
-			d.logger.Error(result.Error.GetOriginError())
+			pllog.CreateLogEntryFromContext(ctx, d.logger).Error(result.Error.GetOriginError().Error())
 		}
 		return result
 	}
