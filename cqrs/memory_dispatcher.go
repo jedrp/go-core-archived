@@ -43,8 +43,8 @@ func (d *InMemoryDispatcher) Dispatch(ctx context.Context, command interface{}) 
 	typeName := reflect.TypeOf(command).String()
 	if handler, ok := d.handlers[typeName]; ok {
 		result := handler.Handle(ctx, command)
-		if d.logger != nil && !result.IsSuccess {
-			pllog.CreateLogEntryFromContext(ctx, d.logger).Error("result.Error.GetOriginError().Error()")
+		if d.logger != nil && !result.IsSuccess && result.Error != nil {
+			pllog.CreateLogEntryFromContext(ctx, d.logger).Error(result.Error.GetOriginError().Error())
 		}
 		return result
 	}

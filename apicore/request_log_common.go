@@ -3,8 +3,8 @@ package apicore
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"runtime/debug"
 
 	"github.com/HoaHuynhSoft/go-core/pllog"
 	uuid "github.com/satori/go.uuid"
@@ -15,10 +15,8 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 		ctx := NewLogContext(r)
 		defer func() {
 			if rErr := recover(); rErr != nil {
-				ctx := r.Context()
-				fmt.Println("rid", ctx.Value("RequestId"))
 				if logger != nil {
-					pllog.CreateLogEntryFromContext(r.Context(), logger).Error(rErr)
+					pllog.CreateLogEntryFromContext(ctx, logger).Error(rErr, string(debug.Stack()))
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(500)
@@ -33,11 +31,10 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 func NewLogContext(r *http.Request) context.Context {
 	ctx := r.Context()
 	reqID := r.Header.Get(pllog.RequestIDHeaderKey)
-	fmt.Println(reqID)
 	if reqID != "" {
-		ctx = context.WithValue(ctx, "RequestId", reqID)
+		ctx = context.WithValue(ctx, pllog.RequestID, reqID)
 	} else {
-		ctx = context.WithValue(ctx, "RequestId", uuid.NewV4().String())
+		ctx = context.WithValue(ctx, pllog.RequestID, uuid.NewV4().String())
 	}
 
 	corID := r.Header.Get(pllog.CorrelationIDHeaderKey)
