@@ -33,11 +33,11 @@ type ElasticHook struct {
 }
 
 type message struct {
-	Host      string
-	Timestamp string `json:"@timestamp"`
-	Message   string
-	Fields    logrus.Fields
-	Level     string
+	Host      string        `json:"host"`
+	Timestamp string        `json:"@timestamp"`
+	Message   string        `json:"message"`
+	Fields    logrus.Fields `json:"fields"`
+	Level     string        `json:"level"`
 }
 
 // NewElasticHook creates new hook.
