@@ -8,7 +8,6 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/sohlich/elogrus.v7"
 )
 
 type LogrusLogger struct {
@@ -57,7 +56,7 @@ func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
 		log.Panic(err)
 	}
 
-	hook, err := elogrus.NewElasticHookWithFunc(client, logrusLogger.LogHostName, logrusLogger.LogLevel, logrusLogger.IndexNameFunc)
+	hook, err := NewElasticHookWithFunc(client, logrusLogger.LogHostName, logrusLogger.LogLevel, logrusLogger.IndexNameFunc)
 	if err != nil {
 		log.Panic(err)
 	}
