@@ -24,6 +24,27 @@ func (log *DefaultLogger) Fatal(args ...interface{}) {
 func (log *DefaultLogger) Panic(args ...interface{}) {
 
 }
+func (log *DefaultLogger) Tracef(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Debugf(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Infof(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Warnf(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Errorf(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Fatalf(format string, args ...interface{}) {
+
+}
+func (log *DefaultLogger) Panicf(format string, args ...interface{}) {
+
+}
 
 //WithFields ...
 func (log *DefaultLogger) WithFields(map[string]interface{}) PlLogentry {
