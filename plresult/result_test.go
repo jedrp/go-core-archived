@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/HoaHuynhSoft/go-core/plresult"
+	"github.com/jedrp/go-core/plresult"
 )
 
 func TestValidationErrorResult(t *testing.T) {

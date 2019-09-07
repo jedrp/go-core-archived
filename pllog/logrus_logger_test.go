@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HoaHuynhSoft/go-core/pllog"
+	"github.com/jedrp/go-core/pllog"
 	"github.com/jessevdk/go-flags"
 	"github.com/sirupsen/logrus"
 )

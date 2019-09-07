@@ -3,7 +3,7 @@ package cqrs
 import (
 	"context"
 
-	"github.com/HoaHuynhSoft/go-core/plresult"
+	"github.com/jedrp/go-core/plresult"
 )
 
 // IHandler ...

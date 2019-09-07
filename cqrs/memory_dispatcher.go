@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/HoaHuynhSoft/go-core/pllog"
-	"github.com/HoaHuynhSoft/go-core/plresult"
+	"github.com/jedrp/go-core/pllog"
+	"github.com/jedrp/go-core/plresult"
 )
 
 // InMemoryDispatcher ...

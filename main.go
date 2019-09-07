@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/HoaHuynhSoft/go-core/pllog"
+	"github.com/jedrp/go-core/pllog"
 )
 
 func main() {

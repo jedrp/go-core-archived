@@ -1,4 +1,4 @@
-module github.com/HoaHuynhSoft/go-core
+module github.com/jedrp/go-core
 
 go 1.12
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/HoaHuynhSoft/go-core/pllog"
+	"github.com/jedrp/go-core/pllog"
 	uuid "github.com/satori/go.uuid"
 )
 

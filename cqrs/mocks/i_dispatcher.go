@@ -5,8 +5,8 @@ package mocks
 import (
 	context "context"
 
-	cqrs "github.com/HoaHuynhSoft/go-core/cqrs"
-	"github.com/HoaHuynhSoft/go-core/plresult"
+	cqrs "github.com/jedrp/go-core/cqrs"
+	"github.com/jedrp/go-core/plresult"
 
 	mock "github.com/stretchr/testify/mock"
 )

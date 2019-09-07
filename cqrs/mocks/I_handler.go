@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	"github.com/HoaHuynhSoft/go-core/plresult"
+	"github.com/jedrp/go-core/plresult"
 	mock "github.com/stretchr/testify/mock"
 )
 
