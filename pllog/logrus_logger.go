@@ -11,12 +11,12 @@ import (
 )
 
 type LogrusLogger struct {
-	ElasticHostURL string `long:"log-host-url" description:"the url of elastichsearch database url" env:"LOG_HOST_URL"`
-	Sniff          bool   `long:"log-enable-sniff" description:"Enable or disable sniff" env:"LOG_SNIFF"`
-	LogIndexPrefix string `long:"log-prefix" description:"the prefix of index name" env:"LOG_INDEX_PREFIX"`
-	LogHostName    string `long:"log-host-name" description:"the prefix of index name" env:"LOG_HOST_NAME"`
-	Enable         bool   `long:"log-enable" description:"the prefix of index name" env:"LOG_ENABLE"`
-	LogLevel       logrus.Level
+	ElasticHostURL string       `long:"log-host-url" description:"the url of elastichsearch database url" env:"LOG_HOST_URL"`
+	Sniff          bool         `long:"log-enable-sniff" description:"Enable or disable sniff" env:"LOG_SNIFF"`
+	LogIndexPrefix string       `long:"log-prefix" description:"the prefix of index name" env:"LOG_INDEX_PREFIX"`
+	LogHostName    string       `long:"log-host-name" description:"the prefix of index name" env:"LOG_HOST_NAME"`
+	Enable         bool         `long:"log-enable" description:"the prefix of index name" env:"LOG_ENABLE"`
+	LogLevel       logrus.Level `long:"log-level" description:"the prefix of index name" env:"LOG_LEVEL"`
 	IndexNameFunc  func() string
 	*logrus.Logger
 }
