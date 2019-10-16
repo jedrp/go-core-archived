@@ -11,19 +11,19 @@ import (
 )
 
 type LogrusLogger struct {
-	ElasticHostURL string       `long:"log-host-url" description:"the url of elastichsearch database url" env:"LOG_HOST_URL"`
-	Sniff          bool         `long:"log-enable-sniff" description:"Enable or disable sniff" env:"LOG_SNIFF"`
-	LogIndexPrefix string       `long:"log-prefix" description:"the prefix of index name" env:"LOG_INDEX_PREFIX"`
-	LogHostName    string       `long:"log-host-name" description:"the prefix of index name" env:"LOG_HOST_NAME"`
-	Enable         bool         `long:"log-enable" description:"the prefix of index name" env:"LOG_ENABLE"`
-	LogLevel       logrus.Level `long:"log-level" description:"the prefix of index name" env:"LOG_LEVEL"`
+	ElasticHostURL string `long:"log-host-url" description:"the url of elastichsearch database url" env:"LOG_HOST_URL"`
+	Sniff          bool   `long:"log-enable-sniff" description:"Enable or disable sniff" env:"LOG_SNIFF"`
+	LogIndexPrefix string `long:"log-prefix" description:"the prefix of index name" env:"LOG_INDEX_PREFIX"`
+	LogHostName    string `long:"log-host-name" description:"the prefix of index name" env:"LOG_HOST_NAME"`
+	Enable         bool   `long:"log-enable" description:"the prefix of index name" env:"LOG_ENABLE"`
+	LogLevel       string `long:"log-level" description:"the prefix of index name" env:"LOG_LEVEL"`
 	IndexNameFunc  func() string
 	*logrus.Logger
 }
 
 func New() PlLogger {
 	logrusLogger := &LogrusLogger{
-		LogLevel: logrus.DebugLevel,
+		LogLevel: "debug",
 	}
 
 	logrusLogger.IndexNameFunc = func() string {
@@ -51,13 +51,19 @@ func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
 		return &DefaultLogger{}
 	}
 	log := logrus.New()
-	log.Level = logrusLogger.Level
+	level, err := logrus.ParseLevel(logrusLogger.LogLevel)
+
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Level = level
+
 	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(logrusLogger.ElasticHostURL))
 	if err != nil {
 		log.Panic(err)
 	}
 
-	hook, err := NewElasticHookWithFunc(client, logrusLogger.LogHostName, logrusLogger.LogLevel, logrusLogger.IndexNameFunc)
+	hook, err := NewElasticHookWithFunc(client, logrusLogger.LogHostName, level, logrusLogger.IndexNameFunc)
 	if err != nil {
 		log.Panic(err)
 	}

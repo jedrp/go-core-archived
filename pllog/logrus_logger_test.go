@@ -23,7 +23,7 @@ func TestLogrusLoggerWrapper(t *testing.T) {
 		"--log-enable", "true",
 	}
 	logrusLogger := &pllog.LogrusLogger{
-		LogLevel: logrus.DebugLevel,
+		LogLevel: "debug",
 		IndexNameFunc: func() string {
 			dt := time.Now()
 			return fmt.Sprintf("%s-%s", logPrefix, dt.Format("2006-01-02"))
