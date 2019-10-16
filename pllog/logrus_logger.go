@@ -51,6 +51,7 @@ func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
 		return &DefaultLogger{}
 	}
 	log := logrus.New()
+	log.Level = logrusLogger.Level
 	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(logrusLogger.ElasticHostURL))
 	if err != nil {
 		log.Panic(err)
