@@ -12,7 +12,7 @@ import (
 
 func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := NewLogContext(r)
+		ctx := NewRequestContext(r)
 		defer func() {
 			if rErr := recover(); rErr != nil {
 				if logger != nil {
@@ -28,7 +28,7 @@ func HandlePanicMiddleware(handler http.Handler, logger pllog.PlLogger) http.Han
 	})
 }
 
-func NewLogContext(r *http.Request) context.Context {
+func NewRequestContext(r *http.Request) context.Context {
 	ctx := r.Context()
 	reqID := r.Header.Get(pllog.RequestIDHeaderKey)
 	if reqID != "" {

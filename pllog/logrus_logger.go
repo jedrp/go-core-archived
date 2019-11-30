@@ -77,3 +77,11 @@ func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
 func (logrusLogger *LogrusLogger) WithFields(fields map[string]interface{}) PlLogentry {
 	return logrusLogger.Logger.WithFields(fields)
 }
+
+func NewEntry(logger *LogrusLogger) *logrus.Entry {
+	return &logrus.Entry{
+		Logger: logger.Logger,
+		// Default is three fields, plus one optional.  Give a little extra room.
+		Data: make(logrus.Fields, 6),
+	}
+}
