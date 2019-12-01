@@ -13,6 +13,18 @@ type Result struct {
 	Error     plError
 }
 
+func NewResult(s interface{}, e plError) *Result {
+	r := &Result{}
+	if e != nil {
+		r.IsSuccess = false
+		r.Error = e
+		return r
+	}
+	r.IsSuccess = true
+	r.Value = s
+	return r
+}
+
 //OKResult return ok reposne
 func OKResult(value interface{}) *Result {
 	return &Result{
