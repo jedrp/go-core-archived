@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/jedrp/go-core/pllog"
+	"github.com/jedrp/go-core/plresult"
 )
 
 type Executer interface {
 	Execute(context.Context)
-	GetError() error
+	GetError() plresult.Error
 	SetError(error)
 	SetDependencesWrapper(context.Context, interface{})
 }
@@ -66,7 +67,7 @@ func (invoker *MemoryExecutableInvoker) Invoke(ctx context.Context, e Executer) 
 		e.Execute(ctx)
 		err := e.GetError()
 		if err != nil {
-			pllog.CreateLogEntryFromContext(ctx, invoker.logger).Error(err.Error())
+			pllog.CreateLogEntryFromContext(ctx, invoker.logger).Error(err.GetErrorMessage())
 		}
 	}
 	msg := fmt.Sprintf("MemoryExecutableInvoker can't find dependences for typr %s", reflect.TypeOf(e).String())

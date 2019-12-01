@@ -1,6 +1,6 @@
 package plresult
 
-type plError interface {
+type Error interface {
 	GetCode() string
 	GetOriginError() error
 	GetErrorMessage() string

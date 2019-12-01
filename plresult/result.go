@@ -10,10 +10,10 @@ import (
 type Result struct {
 	IsSuccess bool
 	Value     interface{}
-	Error     plError
+	Error     Error
 }
 
-func NewResult(s interface{}, e plError) *Result {
+func NewResult(s interface{}, e Error) *Result {
 	r := &Result{}
 	if e != nil {
 		r.IsSuccess = false
@@ -64,7 +64,7 @@ func NotFoundErrorResult(err error, opts ...string) *Result {
 	}
 }
 
-func newErrorResult(errWrapper plError, err error, opts []string) plError {
+func newErrorResult(errWrapper Error, err error, opts []string) Error {
 	optsLength := len(opts)
 	errWrapper.SetError(err)
 	switch {
