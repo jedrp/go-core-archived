@@ -10,5 +10,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.3.0
+	google.golang.org/grpc v1.19.0
 	gopkg.in/sohlich/elogrus.v7 v7.0.0
 )

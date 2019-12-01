@@ -16,11 +16,11 @@ type Executer interface {
 	Execute(context.Context)
 	GetError() plresult.Error
 	SetError(error)
-	SetDependencesWrapper(context.Context, interface{})
+	SetDependencesWrapper(context.Context, interface{}) error
 }
 
 type Invoker interface {
-	RegisterExecuter(context.Context, interface{})
+	RegisterExecuter(context.Context, interface{}, ...Executer)
 	Invoke(context.Context, Executer)
 }
 
