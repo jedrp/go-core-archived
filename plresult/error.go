@@ -1,5 +1,10 @@
 package plresult
 
+import (
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
 type Error interface {
 	GetCode() string
 	GetOriginError() error
@@ -102,4 +107,20 @@ func (err *UnkownError) SetError(orgError error) {
 }
 func (err *UnkownError) SetMessage(msg string) {
 	err.ErrorMessage = msg
+}
+
+func GetGrpcError(e Error) error {
+	if e != nil {
+		var code codes.Code
+		switch e.(type) {
+		case *ValidationError:
+			code = codes.InvalidArgument
+		case *NotFoundError:
+			code = codes.InvalidArgument
+		default:
+			code = codes.InvalidArgument
+		}
+		return status.Errorf(code, e.GetErrorMessage())
+	}
+	return nil
 }
