@@ -69,7 +69,9 @@ func (invoker *MemoryExecutableInvoker) Invoke(ctx context.Context, e Executer) 
 		if err != nil {
 			pllog.CreateLogEntryFromContext(ctx, invoker.logger).Error(err.GetErrorMessage())
 		}
+		return
 	}
+
 	msg := fmt.Sprintf("MemoryExecutableInvoker can't find dependences for typr %s", reflect.TypeOf(e).String())
 	pllog.CreateLogEntryFromContext(ctx, invoker.logger).Errorf(msg)
 	e.SetError(errors.New(msg))
