@@ -12,11 +12,27 @@ import (
 	"github.com/jedrp/go-core/plresult"
 )
 
+var (
+	INVOKER_INTERNAL_ERROR = &plresult.InternalServerError{
+		ErrorCode:    "INTERNAL_SERVER_ERROR",
+		ErrorMessage: "An error occurt when server processing the request",
+		OriginError:  errors.New("An error occurt when server processing the request"),
+	}
+)
+
 type Executer interface {
 	Execute(context.Context)
 	GetError() plresult.Error
-	SetError(error)
+	SetError(plresult.Error)
 	SetDependencesWrapper(context.Context, interface{}) error
+}
+
+type Commander interface {
+	Executer
+}
+
+type Querer interface {
+	Executer
 }
 
 type Invoker interface {
@@ -46,7 +62,7 @@ func (invoker *MemoryExecutableInvoker) RegisterExecuter(ctx context.Context, de
 	}()
 	for _, e := range executers {
 		typeName := reflect.TypeOf(e).String()
-		invoker.logger.Infof("Registering handler for", typeName)
+		invoker.logger.Infof("Registering handler for %s", typeName)
 		if _, ok := invoker.registeredDependencesWrappers[typeName]; ok {
 			msg := fmt.Sprintf("Duplicated executer registration detected of type: %s", typeName)
 			invoker.logger.Panic(msg)
@@ -72,7 +88,7 @@ func (invoker *MemoryExecutableInvoker) Invoke(ctx context.Context, e Executer) 
 		return
 	}
 
-	msg := fmt.Sprintf("MemoryExecutableInvoker can't find dependences for typr %s", reflect.TypeOf(e).String())
+	msg := fmt.Sprintf("MemoryExecutableInvoker can't find dependences for type %s", reflect.TypeOf(e).String())
 	pllog.CreateLogEntryFromContext(ctx, invoker.logger).Errorf(msg)
-	e.SetError(errors.New(msg))
+	e.SetError(INVOKER_INTERNAL_ERROR)
 }
