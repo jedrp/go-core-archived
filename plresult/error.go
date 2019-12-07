@@ -49,18 +49,23 @@ type NotFoundError errorObj
 func (err *NotFoundError) GetCode() string {
 	return err.ErrorCode
 }
+
 func (err *NotFoundError) GetOriginError() error {
 	return err.OriginError
 }
+
 func (err *NotFoundError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+
 func (err *NotFoundError) SetCode(code string) {
 	err.ErrorCode = code
 }
+
 func (err *NotFoundError) SetError(orgError error) {
 	err.OriginError = orgError
 }
+
 func (err *NotFoundError) SetMessage(msg string) {
 	err.ErrorMessage = msg
 }
@@ -71,18 +76,23 @@ type InternalServerError errorObj
 func (err *InternalServerError) GetCode() string {
 	return err.ErrorCode
 }
+
 func (err *InternalServerError) GetOriginError() error {
 	return err.OriginError
 }
+
 func (err *InternalServerError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+
 func (err *InternalServerError) SetCode(code string) {
 	err.ErrorCode = code
 }
+
 func (err *InternalServerError) SetError(orgError error) {
 	err.OriginError = orgError
 }
+
 func (err *InternalServerError) SetMessage(msg string) {
 	err.ErrorMessage = msg
 }
@@ -93,18 +103,23 @@ type UnkownError errorObj
 func (err *UnkownError) GetCode() string {
 	return err.ErrorCode
 }
+
 func (err *UnkownError) GetOriginError() error {
 	return err.OriginError
 }
+
 func (err *UnkownError) GetErrorMessage() string {
 	return err.ErrorMessage
 }
+
 func (err *UnkownError) SetCode(code string) {
 	err.ErrorCode = code
 }
+
 func (err *UnkownError) SetError(orgError error) {
 	err.OriginError = orgError
 }
+
 func (err *UnkownError) SetMessage(msg string) {
 	err.ErrorMessage = msg
 }
@@ -123,4 +138,33 @@ func GetGrpcError(e Error) error {
 		return status.Errorf(code, e.GetErrorMessage())
 	}
 	return nil
+}
+
+func NewValidationError(err error, opts ...string) Error {
+	return newErrorResult(&ValidationError{}, err, opts)
+}
+
+func NewInternalServerError(err error, opts ...string) Error {
+	return newErrorResult(&InternalServerError{}, err, opts)
+}
+
+func NewNotFoundError(err error, opts ...string) Error {
+	return newErrorResult(&NotFoundError{}, err, opts)
+}
+
+func newErrorResult(errWrapper Error, err error, opts []string) Error {
+	optsLength := len(opts)
+	errWrapper.SetError(err)
+	switch {
+	case optsLength > 1:
+		errWrapper.SetCode(opts[0])
+		errWrapper.SetMessage(opts[1])
+	case optsLength > 0:
+		errWrapper.SetCode(opts[0])
+		errWrapper.SetMessage(err.Error())
+	default:
+		errWrapper.SetCode("UNKNOWN_ERROR")
+		errWrapper.SetMessage(err.Error())
+	}
+	return errWrapper
 }

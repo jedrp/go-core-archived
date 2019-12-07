@@ -64,23 +64,6 @@ func NotFoundErrorResult(err error, opts ...string) *Result {
 	}
 }
 
-func newErrorResult(errWrapper Error, err error, opts []string) Error {
-	optsLength := len(opts)
-	errWrapper.SetError(err)
-	switch {
-	case optsLength > 1:
-		errWrapper.SetCode(opts[0])
-		errWrapper.SetMessage(opts[1])
-	case optsLength > 0:
-		errWrapper.SetCode(opts[0])
-		errWrapper.SetMessage(err.Error())
-	default:
-		errWrapper.SetCode("UNKNOWN_ERROR")
-		errWrapper.SetMessage(err.Error())
-	}
-	return errWrapper
-}
-
 //WriteResponse append response to request
 func (result *Result) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
