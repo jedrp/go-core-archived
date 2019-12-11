@@ -55,10 +55,11 @@ type Server interface {
 
 type CoreServer struct {
 	Server
-	logger      pllog.PlLogger
-	grpcServer  *grpc.Server
-	DisableRest bool `long:"disable-rest" description:"Enable REST protocol" env:"DISABLE_REST"`
-	DisableGrpc bool `long:"disable-grpc" description:"Enable Grpc protocol" env:"DISABLE_GRPC"`
+	logger          pllog.PlLogger
+	grpcServer      *grpc.Server
+	DisableRest     bool   `long:"disable-rest" description:"Enable REST protocol" env:"DISABLE_REST"`
+	DisableGrpc     bool   `long:"disable-grpc" description:"Enable Grpc protocol" env:"DISABLE_GRPC"`
+	EnabledListener string `long:"scheme" description:"Enable Grpc protocol" env:"SCHEME"`
 }
 type ConfigGrpcFunc func(*grpc.Server)
 
@@ -116,7 +117,12 @@ func NewCoreServer(ctx context.Context,
 }
 
 func (s *CoreServer) StartServing(ctx context.Context) error {
-	schemes := s.GetEnabledListeners()
+	var schemes []string
+	if s.EnabledListener != "" {
+		schemes = []string{s.EnabledListener}
+	} else {
+		schemes = s.GetEnabledListeners()
+	}
 	var l net.Listener
 	var e error
 	if hasScheme(schemes, schemeHTTPS) {
