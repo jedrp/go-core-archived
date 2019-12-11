@@ -12,21 +12,22 @@ import (
 type Jwks struct {
 	Keys []JSONWebKeys `json:"keys"`
 }
-type JwtValidatorConfig struct {
-	Jwks       Jwks
+type JwtValidator struct {
+	jwks       *Jwks
 	Aud        string
 	Issuer     string
 	JwkAddress string
-	cert       string
 }
 
-func NewJwtValidatorConfig(aud string, issuer string, getJwtFunc func() Jwks) *JwtValidatorConfig {
-	return &JwtValidatorConfig{
+func NewJwtValidator(aud string, issuer string, getJwtFunc func() Jwks) (*JwtValidator, error) {
+	v := &JwtValidator{
 		Aud:        aud,
 		Issuer:     issuer,
-		Jwks:       getJwtFunc(),
 		JwkAddress: fmt.Sprintf("%s/.well-known/openid-configuration/jwks", issuer),
 	}
+	jwks, e := v.GetJwks()
+	v.jwks = jwks
+	return v, e
 }
 
 type JSONWebKeys struct {
@@ -38,11 +39,11 @@ type JSONWebKeys struct {
 	X5c []string `json:"x5c"`
 }
 
-func (config *JwtValidatorConfig) ValidateToken(token string) (*jwt.Token, error) {
+func (config *JwtValidator) ValidateToken(token string) (*jwt.Token, error) {
 	return jwt.Parse(token, config.ValidationKeyGetter)
 }
 
-func (config *JwtValidatorConfig) ValidationKeyGetter(token *jwt.Token) (interface{}, error) {
+func (config *JwtValidator) ValidationKeyGetter(token *jwt.Token) (interface{}, error) {
 	audClaim, _ := token.Claims.(jwt.MapClaims)["aud"]
 	validAud := false
 	if real, ok := audClaim.([]interface{}); ok {
@@ -75,11 +76,11 @@ func (config *JwtValidatorConfig) ValidationKeyGetter(token *jwt.Token) (interfa
 	return result, nil
 }
 
-func (config *JwtValidatorConfig) getPemCert(token *jwt.Token) (string, error) {
+func (config *JwtValidator) getPemCert(token *jwt.Token) (string, error) {
 	cert := ""
-	for k, _ := range config.Jwks.Keys {
-		if token.Header["kid"] == config.Jwks.Keys[k].Kid {
-			cert = "-----BEGIN CERTIFICATE-----\n" + config.Jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
+	for k, _ := range config.jwks.Keys {
+		if token.Header["kid"] == config.jwks.Keys[k].Kid {
+			cert = "-----BEGIN CERTIFICATE-----\n" + config.jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
 		}
 	}
 
@@ -90,7 +91,7 @@ func (config *JwtValidatorConfig) getPemCert(token *jwt.Token) (string, error) {
 	return cert, nil
 }
 
-func (config *JwtValidatorConfig) GetJwks() (*Jwks, error) {
+func (config *JwtValidator) GetJwks() (*Jwks, error) {
 	resp, err := http.Get(config.JwkAddress)
 
 	if err != nil {
