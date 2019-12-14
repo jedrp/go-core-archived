@@ -19,6 +19,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -140,34 +141,33 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 	}
 
 	if !s.DisableRest && !s.DisableGrpc {
+		var server *http.Server
 		if s.GetTLSCertificate() == "" || s.GetTLSCertificateKey() == "" {
-			s.logger.Fatal("Sever starting serving both REST and gRPC required TLS setting (TLSCertificate and TLSCertificateKey are required)")
+			s.logger.Info(`----Sever starting serving both REST and gRPC without TLS setting (TLSCertificate and TLSCertificateKey) Using h2c to serve http2 insecure-----`)
+			server = &http.Server{
+				Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
+			}
+		} else {
+			cert, err := tls.LoadX509KeyPair(s.GetTLSCertificate(), s.GetTLSCertificateKey())
+			if err != nil {
+				panic(err)
+			}
+			tlsConfig := &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+			l = tls.NewListener(l, tlsConfig)
+			server = &http.Server{
+				TLSConfig: tlsConfig,
+				Handler:   http.HandlerFunc(s.getHandlerFunc()),
+			}
+			http2.ConfigureServer(server, nil)
 		}
-		cert, err := tls.LoadX509KeyPair(s.GetTLSCertificate(), s.GetTLSCertificateKey())
-		if err != nil {
-			panic(err)
-		}
-		tlsConfig := &tls.Config{
-			Certificates: []tls.Certificate{cert},
-		}
-		l = tls.NewListener(l, tlsConfig)
-		server := &http.Server{
-			TLSConfig: tlsConfig,
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-					s.grpcServer.ServeHTTP(w, r)
-				} else {
-					s.GetHandler().ServeHTTP(w, r)
-				}
-			}),
-		}
-		http2.ConfigureServer(server, nil)
 
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		go func() {
 			for range c {
-				s.logger.Info("shutting down gRPC server...")
+				s.logger.Info("shutting down server...")
 
 				server.Close()
 
@@ -274,4 +274,14 @@ func UnaryServerRequestContextInterceptor() grpc.UnaryServerInterceptor {
 		err = fmt.Errorf("Unable to obtain metadata")
 		return
 	}
+}
+
+func (s *CoreServer) getHandlerFunc() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			s.grpcServer.ServeHTTP(w, r)
+		} else {
+			s.GetHandler().ServeHTTP(w, r)
+		}
+	})
 }

@@ -2,6 +2,7 @@ package pllog
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -40,22 +41,21 @@ func New() PlLogger {
 		}
 		os.Exit(code)
 	}
-	if !logrusLogger.Enable {
-		return &DefaultLogger{}
-	}
 	return NewWithRef(logrusLogger)
 }
 
 func NewWithRef(logrusLogger *LogrusLogger) PlLogger {
-	if !logrusLogger.Enable {
-		return &DefaultLogger{}
-	}
-	log := logrus.New()
 	level, err := logrus.ParseLevel(logrusLogger.LogLevel)
 
 	if err != nil {
 		log.Panic(err)
 	}
+
+	if !logrusLogger.Enable {
+		return NewDefaultLogger(level)
+	}
+
+	log := logrus.New()
 	log.Level = level
 
 	client, err := elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(logrusLogger.ElasticHostURL))
