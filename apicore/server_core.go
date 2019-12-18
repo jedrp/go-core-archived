@@ -12,7 +12,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/go-openapi/loads"
 	"github.com/go-openapi/swag"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/jedrp/go-core/pllog"
@@ -68,21 +67,8 @@ func NewCoreServer(ctx context.Context,
 	server Server,
 	logger pllog.PlLogger,
 	configGrpcServer ConfigGrpcFunc,
-	swaggerSpec *loads.Document,
 ) *CoreServer {
 	// set up REST server
-	parser := flags.NewParser(server, flags.IgnoreUnknown)
-	parser.ShortDescription = swaggerSpec.Spec().Info.Title
-	parser.LongDescription = swaggerSpec.Spec().Info.Description
-	server.ConfigureFlags()
-	for _, optsGroup := range server.GetCommandLineOptionsGroups() {
-		_, err := parser.AddGroup(optsGroup.ShortDescription, optsGroup.LongDescription, optsGroup.Options)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
-	ParseConfig(parser)
-	server.ConfigureAPI()
 	server.SetHandler(HandlePanicMiddleware(server.GetHandler(), logger))
 
 	// set up gRPC server
@@ -111,7 +97,7 @@ func NewCoreServer(ctx context.Context,
 		logger:     logger,
 		grpcServer: grpcServer,
 	}
-	parser = flags.NewParser(coreServer, flags.IgnoreUnknown)
+	parser := flags.NewParser(coreServer, flags.IgnoreUnknown)
 	ParseConfig(parser)
 
 	return coreServer
@@ -203,7 +189,6 @@ func StartServers(ctx context.Context,
 	server Server,
 	logger pllog.PlLogger,
 	configGrpcServer ConfigGrpcFunc,
-	swaggerSpec *loads.Document,
 ) error {
 
 	s := NewCoreServer(
@@ -211,7 +196,6 @@ func StartServers(ctx context.Context,
 		server,
 		logger,
 		configGrpcServer,
-		swaggerSpec,
 	)
 
 	return s.StartServing(ctx)
