@@ -18,7 +18,7 @@ func UnaryValidatorServerInterceptor(formats strfmt.Registry, logger pllog.PlLog
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if v, ok := req.(validator); ok {
 			if err := v.Validate(formats); err != nil {
-				pllog.CreateLogEntryFromContext(ctx, logger).Errorf("InvalidArgument", err.Error())
+				pllog.CreateLogEntryFromContext(ctx, logger).Errorf("InvalidArgument %s", err.Error())
 				return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 			}
 		}
@@ -47,7 +47,7 @@ func (s *receiverWrapper) RecvMsg(m interface{}) error {
 	}
 	if v, ok := m.(validator); ok {
 		if err := v.Validate(s.formats); err != nil {
-			pllog.CreateLogEntryFromContext(s.ctx, s.logger).Errorf("InvalidArgument", err.Error())
+			pllog.CreateLogEntryFromContext(s.ctx, s.logger).Errorf("InvalidArgument %s", err.Error())
 			return grpc.Errorf(codes.InvalidArgument, err.Error())
 		}
 	}
