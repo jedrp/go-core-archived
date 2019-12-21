@@ -9,19 +9,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime/debug"
 	"strings"
 
-	"github.com/go-openapi/swag"
+	strfmt "github.com/go-openapi/strfmt"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/jedrp/go-core/pllog"
 	flags "github.com/jessevdk/go-flags"
-	uuid "github.com/satori/go.uuid"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -39,8 +37,6 @@ func init() {
 }
 
 type Server interface {
-	ConfigureFlags()
-	ConfigureAPI()
 	HTTPListener() (net.Listener, error)
 	UnixListener() (net.Listener, error)
 	TLSListener() (net.Listener, error)
@@ -49,7 +45,6 @@ type Server interface {
 	GetTLSCertificate() string
 	GetTLSCertificateKey() string
 	GetEnabledListeners() []string
-	GetCommandLineOptionsGroups() []swag.CommandLineOptionsGroup
 	Serve() (err error)
 }
 
@@ -74,10 +69,18 @@ func NewCoreServer(ctx context.Context,
 	// set up gRPC server
 	cert := server.GetTLSCertificate()
 	certKey := server.GetTLSCertificateKey()
+	formats := strfmt.Default
 	var grpcServer *grpc.Server
 	grpcOpts := []grpc.ServerOption{grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 		UnaryServerRequestContextInterceptor(),
 		UnaryServerPanicInterceptor(logger),
+		UnaryValidatorServerInterceptor(formats, logger),
+	)), grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+		StreamServerRequestInterceptor(),
+		grpc_recovery.StreamServerInterceptor(
+			grpc_recovery.WithRecoveryHandlerContext(getRecoveryHandlerFuncContextHandler(logger)),
+		),
+		StreamValidatorServerInterceptor(formats, logger),
 	))}
 	if cert != "" || certKey != "" {
 		creds, err := credentials.NewServerTLSFromFile(cert, certKey)
@@ -121,6 +124,8 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 	} else if hasScheme(schemes, schemeUnix) {
 		s.logger.Info("Server Unix scheme enabled")
 		l, e = s.UnixListener()
+	} else {
+		l, e = s.HTTPListener()
 	}
 	if e != nil {
 		log.Fatalf("failed to serve: %s", e)
@@ -224,39 +229,6 @@ func ParseConfig(parser *flags.Parser) {
 			}
 		}
 		os.Exit(code)
-	}
-}
-
-func UnaryServerPanicInterceptor(logger pllog.PlLogger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				if logger != nil {
-					pllog.CreateLogEntryFromContext(ctx, logger).Error(r, string(debug.Stack()))
-				}
-			}
-		}()
-
-		return handler(ctx, req)
-	}
-}
-
-func UnaryServerRequestContextInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (_ interface{}, err error) {
-
-		ctx = context.WithValue(ctx, pllog.RequestID, uuid.NewV4().String())
-
-		md, ok := metadata.FromIncomingContext(ctx)
-		if ok {
-			corID := md.Get(pllog.CorrelationIDHeaderKey)
-			if len(corID) > 0 && corID[0] != "" {
-				ctx = context.WithValue(ctx, pllog.CorrelationID, corID[0])
-			}
-			return handler(ctx, req)
-		}
-
-		err = fmt.Errorf("Unable to obtain metadata")
-		return
 	}
 }
 

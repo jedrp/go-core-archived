@@ -6,7 +6,9 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-openapi/loads v0.19.2
 	github.com/go-openapi/runtime v0.19.3
+	github.com/go-openapi/strfmt v0.19.0
 	github.com/go-openapi/swag v0.19.2
+	github.com/golang/protobuf v1.3.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/olivere/elastic/v7 v7.0.6
