@@ -121,9 +121,6 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 	} else if hasScheme(schemes, schemeHTTP) {
 		s.logger.Info("Server Http scheme enabled")
 		l, e = s.HTTPListener()
-	} else if hasScheme(schemes, schemeUnix) {
-		s.logger.Info("Server Unix scheme enabled")
-		l, e = s.UnixListener()
 	} else {
 		l, e = s.HTTPListener()
 	}
