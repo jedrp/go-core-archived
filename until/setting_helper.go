@@ -63,6 +63,7 @@ func (s *Setting) getValue(key string) string {
 
 func GetSettings(envName string) (*Setting, error) {
 	str := os.Getenv(envName)
+
 	setting := &Setting{
 		EnvVar: envName,
 	}

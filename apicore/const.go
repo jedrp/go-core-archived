@@ -1,7 +1,7 @@
 package apicore
 
 var (
-	API_SETTING_STR   = "api-setting"
+	API_SETTING_STR   = "API_SETTING"
 	API_TLS_KEY_NAME  = "tls-key"
 	API_TLS_CERT_NAME = "tls-certificate"
 	API_TLS_CA_NAME   = "tls-ca"
