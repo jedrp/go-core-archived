@@ -41,6 +41,7 @@ type Server interface {
 	UnixListener() (net.Listener, error)
 	TLSListener() (net.Listener, error)
 	SetHandler(handler http.Handler)
+	GetPort() int
 	GetHandler() http.Handler
 	GetTLSCertificate() string
 	GetTLSCertificateKey() string
@@ -50,11 +51,13 @@ type Server interface {
 
 type CoreServer struct {
 	Server
-	logger          pllog.PlLogger
-	grpcServer      *grpc.Server
-	DisableRest     bool   `long:"disable-rest" description:"Enable REST protocol" env:"DISABLE_REST"`
-	DisableGrpc     bool   `long:"disable-grpc" description:"Enable Grpc protocol" env:"DISABLE_GRPC"`
-	EnabledListener string `long:"scheme" description:"Enable Grpc protocol" env:"SCHEME"`
+	DisableRest      bool   `long:"disable-rest" description:"Enable REST protocol" env:"DISABLE_REST"`
+	DisableGrpc      bool   `long:"disable-grpc" description:"Enable Grpc protocol" env:"DISABLE_GRPC"`
+	GrpcPort         int    `long:"grpc-port" description:"Enable Grpc protocol" env:"GRPC_PORT"`
+	EnabledListener  string `long:"scheme" description:"Enable Grpc protocol" env:"SCHEME"`
+	logger           pllog.PlLogger
+	grpcServer       *grpc.Server
+	enbaleTLSSetting bool
 }
 type ConfigGrpcFunc func(*grpc.Server)
 
@@ -100,6 +103,11 @@ func NewCoreServer(ctx context.Context,
 		logger:     logger,
 		grpcServer: grpcServer,
 	}
+
+	if cert != "" || certKey != "" {
+		coreServer.enbaleTLSSetting = true
+	}
+
 	parser := flags.NewParser(coreServer, flags.IgnoreUnknown)
 	ParseConfig(parser)
 
@@ -107,79 +115,104 @@ func NewCoreServer(ctx context.Context,
 }
 
 func (s *CoreServer) StartServing(ctx context.Context) error {
-	var schemes []string
-	if s.EnabledListener != "" {
-		schemes = []string{s.EnabledListener}
-	} else {
-		schemes = s.GetEnabledListeners()
-	}
+
 	var l net.Listener
 	var e error
-	if hasScheme(schemes, schemeHTTPS) {
-		s.logger.Info("Server Https scheme enabled")
-		l, e = s.TLSListener()
-	} else if hasScheme(schemes, schemeHTTP) {
-		s.logger.Info("Server Http scheme enabled")
+	if s.EnabledListener == "http" {
 		l, e = s.HTTPListener()
 	} else {
-		l, e = s.HTTPListener()
+		l, e = s.TLSListener()
 	}
+
 	if e != nil {
-		log.Fatalf("failed to serve: %s", e)
+		log.Fatalf("failed to serve: %s", e.Error())
 	}
 
+	// serving both GRPC and REST
 	if !s.DisableRest && !s.DisableGrpc {
-		var server *http.Server
-		if s.GetTLSCertificate() == "" || s.GetTLSCertificateKey() == "" {
-			s.logger.Info(`----Sever starting serving both REST and gRPC without TLS setting (TLSCertificate and TLSCertificateKey) Using h2c to serve http2 insecure-----`)
-			server = &http.Server{
-				Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
+		// same port for GRPC and REST, the we need special set up
+		hostingGRPCAndRESTOnSamePort := s.GrpcPort > 0 && s.GetPort() == s.GrpcPort
+		if hostingGRPCAndRESTOnSamePort {
+			var server *http.Server
+			if s.enbaleTLSSetting {
+				cert, err := tls.LoadX509KeyPair(s.GetTLSCertificate(), s.GetTLSCertificateKey())
+				if err != nil {
+					panic(err)
+				}
+				tlsConfig := &tls.Config{
+					Certificates: []tls.Certificate{cert},
+				}
+				l = tls.NewListener(l, tlsConfig)
+				server = &http.Server{
+					TLSConfig: tlsConfig,
+					Handler:   http.HandlerFunc(s.getHandlerFunc()),
+				}
+				http2.ConfigureServer(server, nil)
+			} else {
+				server = &http.Server{
+					Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
+				}
 			}
+
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt)
+			go func() {
+				for range c {
+					s.logger.Info("shutting down server...")
+
+					server.Close()
+
+					<-ctx.Done()
+				}
+			}()
+
+			s.logger.Infof("Sever starting serving both REST and gRPC at: %s\n", l.Addr())
+
+			if err := server.Serve(l); !strings.Contains(err.Error(),
+				"use of closed network connection") {
+				s.logger.Fatal(err)
+			}
+			return nil
+
 		} else {
-			cert, err := tls.LoadX509KeyPair(s.GetTLSCertificate(), s.GetTLSCertificateKey())
-			if err != nil {
-				panic(err)
-			}
-			tlsConfig := &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			}
-			l = tls.NewListener(l, tlsConfig)
-			server = &http.Server{
-				TLSConfig: tlsConfig,
-				Handler:   http.HandlerFunc(s.getHandlerFunc()),
-			}
-			http2.ConfigureServer(server, nil)
-		}
 
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		go func() {
-			for range c {
-				s.logger.Info("shutting down server...")
+			go func() {
+				s.logger.Infof("Sever starting serving REST at: %s\n", l.Addr())
+				if err := s.Serve(); err != nil {
+					log.Fatalln(err)
+				}
+			}()
 
-				server.Close()
-
-				<-ctx.Done()
-			}
-		}()
-
-		fmt.Printf("Sever starting serving both REST and gRPC at: %s\n", l.Addr())
-		if err := server.Serve(l); !strings.Contains(err.Error(),
-			"use of closed network connection") {
-			log.Fatal(err)
+			go func() {
+				lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GrpcPort))
+				if err != nil {
+					s.logger.Panicf("failed to listen: %v", err)
+				}
+				s.logger.Infof("Sever starting serving gRPC at: %s\n", lis.Addr())
+				if e = s.grpcServer.Serve(lis); e != nil {
+					log.Fatalf("failed to serve: %s", e)
+				}
+			}()
 		}
 		return nil
 	}
 
+	// diable grpc
 	if !s.DisableRest && s.DisableGrpc {
 		fmt.Printf("Sever starting serving only REST at: %s\n", l.Addr())
 		if err := s.Serve(); err != nil {
 			log.Fatalln(err)
 		}
 	}
+
+	//disable rest
 	if s.DisableRest && !s.DisableGrpc {
-		fmt.Printf("Sever starting serving only gRPC at: %s\n", l.Addr())
-		if e = s.grpcServer.Serve(l); e != nil {
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GrpcPort))
+		if err != nil {
+			s.logger.Panicf("failed to listen: %v", err)
+		}
+		fmt.Printf("Sever starting serving only gRPC at: %s\n", lis.Addr())
+		if e = s.grpcServer.Serve(lis); e != nil {
 			log.Fatalf("failed to serve: %s", e)
 		}
 	}

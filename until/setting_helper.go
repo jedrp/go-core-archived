@@ -53,7 +53,7 @@ func (s *Setting) GetStringValue(key string, defaultValue string) string {
 
 func (s *Setting) getValue(key string) string {
 	if !s.IsConfigured() {
-		panic(s.EnvVar + "Setting was not configured")
+		panic(s.EnvVar + " Setting was not configured")
 	}
 	if v, ok := s.items[key]; ok {
 		return v

@@ -71,6 +71,9 @@ func (s *testRestServer) TLSListener() (net.Listener, error) {
 func (s *testRestServer) SetHandler(handler http.Handler) {
 	return
 }
+func (s *testRestServer) GetPort() int {
+	return 0
+}
 func (s *testRestServer) GetHandler() http.Handler {
 	return nil
 }
