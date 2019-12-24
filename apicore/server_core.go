@@ -42,6 +42,7 @@ type Server interface {
 	TLSListener() (net.Listener, error)
 	SetHandler(handler http.Handler)
 	GetPort() int
+	GetHost() string
 	GetHandler() http.Handler
 	GetTLSCertificate() string
 	GetTLSCertificateKey() string
@@ -116,6 +117,9 @@ func NewCoreServer(ctx context.Context,
 
 func (s *CoreServer) StartServing(ctx context.Context) error {
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
 	s.logger.Infof("Sever start with REST_PORT: %v; GRPC_PORT: %v; SCHEME: %s; DISABLE_REST: %v; DISABLE_GRPC: %v;",
 		s.GetPort(),
 		s.GrpcPort,
@@ -124,12 +128,25 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 		s.DisableGrpc,
 	)
 
+	var schemes []string
+	if s.EnabledListener != "" {
+		schemes = []string{s.EnabledListener}
+	} else {
+		schemes = s.GetEnabledListeners()
+	}
 	var l net.Listener
 	var e error
-	if s.EnabledListener == "http" {
-		l, e = s.HTTPListener()
-	} else {
+	if hasScheme(schemes, schemeHTTPS) {
+		s.logger.Info("Server Https scheme enabled")
 		l, e = s.TLSListener()
+	} else if hasScheme(schemes, schemeHTTP) {
+		s.logger.Info("Server Http scheme enabled")
+		l, e = s.HTTPListener()
+	} else if hasScheme(schemes, schemeUnix) {
+		s.logger.Info("Server Unix scheme enabled")
+		l, e = s.UnixListener()
+	} else {
+		l, e = s.HTTPListener()
 	}
 
 	if e != nil {
@@ -161,9 +178,6 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 					Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
 				}
 			}
-
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt)
 			go func() {
 				for range c {
 					s.logger.Info("shutting down server...")
@@ -173,7 +187,6 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 					<-ctx.Done()
 				}
 			}()
-
 			s.logger.Infof("Sever starting serving both REST and gRPC at: %s\n", l.Addr())
 
 			if err := server.Serve(l); !strings.Contains(err.Error(),
@@ -183,6 +196,7 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 			return nil
 
 		} else {
+
 			//spawn new thread to handle rest request
 			go func() {
 				s.logger.Infof("Sever starting serving REST at: %s\n", l.Addr())
@@ -191,10 +205,22 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 				}
 			}()
 
-			lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GrpcPort))
+			lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.GetHost(), s.GrpcPort))
 			if err != nil {
 				s.logger.Panicf("failed to listen: %v", err)
 			}
+			// Rest server already hanle interup itseft,
+			// Then just need to handle for grpc server
+			go func() {
+				for range c {
+					s.logger.Info("shutting down server...")
+
+					s.grpcServer.GracefulStop()
+
+					<-ctx.Done()
+				}
+			}()
+
 			s.logger.Infof("Sever starting serving gRPC at: %s\n", lis.Addr())
 			if e = s.grpcServer.Serve(lis); e != nil {
 				log.Fatalf("failed to serve: %s", e)

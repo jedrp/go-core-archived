@@ -74,6 +74,9 @@ func (s *testRestServer) SetHandler(handler http.Handler) {
 func (s *testRestServer) GetPort() int {
 	return 0
 }
+func (s *testRestServer) GetHost() string {
+	return "localhost"
+}
 func (s *testRestServer) GetHandler() http.Handler {
 	return nil
 }
