@@ -15,6 +15,7 @@ import (
 )
 
 type CoreServerV2 struct {
+	Host              string         `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
 	GRPCPort          int            `long:"grpc-port" description:"Enable Grpc protocol" env:"GRPC_PORT"`
 	RESTPort          int            `long:"rest-port" description:"Enable Grpc protocol" env:"REST_PORT"`
 	ListenLimit       int            `long:"listen-limit" description:"limit the number of outstanding requests"`
@@ -90,8 +91,14 @@ func (s *CoreServerV2) StartServing() {
 		s.logger.Panicf("GRPC_PORT and REST_PORT are both not configured, stop!")
 	}
 
-	if s.GRPCPort < 1 && s.RESTPort > 1 {
+	if s.GRPCPort > 1 && s.RESTPort < 1 {
+		// enable only grpc
+	} else if s.GRPCPort > 1 && s.RESTPort < 1 {
+		// enable only rest
+	} else if s.GRPCPort == s.RESTPort {
+		// run grpc and rest in shared port mode
+	} else {
+		// run grpc and rest on difference ports
 
 	}
-
 }
