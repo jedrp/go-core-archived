@@ -116,6 +116,14 @@ func NewCoreServer(ctx context.Context,
 
 func (s *CoreServer) StartServing(ctx context.Context) error {
 
+	s.logger.Infof("Sever start with REST_PORT: %v; GRPC_PORT: %v; SCHEME: %s; DISABLE_REST: %v; DISABLE_GRPC: %v;",
+		s.GetPort(),
+		s.GrpcPort,
+		s.EnabledListener,
+		s.DisableRest,
+		s.DisableGrpc,
+	)
+
 	var l net.Listener
 	var e error
 	if s.EnabledListener == "http" {
@@ -175,7 +183,7 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 			return nil
 
 		} else {
-
+			//spawn new thread to handle rest request
 			go func() {
 				s.logger.Infof("Sever starting serving REST at: %s\n", l.Addr())
 				if err := s.Serve(); err != nil {
@@ -183,16 +191,14 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 				}
 			}()
 
-			go func() {
-				lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GrpcPort))
-				if err != nil {
-					s.logger.Panicf("failed to listen: %v", err)
-				}
-				s.logger.Infof("Sever starting serving gRPC at: %s\n", lis.Addr())
-				if e = s.grpcServer.Serve(lis); e != nil {
-					log.Fatalf("failed to serve: %s", e)
-				}
-			}()
+			lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.GrpcPort))
+			if err != nil {
+				s.logger.Panicf("failed to listen: %v", err)
+			}
+			s.logger.Infof("Sever starting serving gRPC at: %s\n", lis.Addr())
+			if e = s.grpcServer.Serve(lis); e != nil {
+				log.Fatalf("failed to serve: %s", e)
+			}
 		}
 		return nil
 	}
