@@ -13,7 +13,7 @@ type Setting struct {
 }
 
 func (s *Setting) IsConfigured() bool {
-	if s == nil || len(s.items) > 0 {
+	if s != nil && len(s.items) > 0 {
 		return true
 	}
 	return false
