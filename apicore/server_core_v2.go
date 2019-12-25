@@ -332,6 +332,7 @@ func (s *CoreServerV2) serveRESTAPI() error {
 		// must have at least one certificate or panics
 		httpsServer.TLSConfig.BuildNameToCertificate()
 		s.restServer = httpsServer
+		tlsListener = tls.NewListener(tlsListener, httpsServer.TLSConfig)
 		s.logger.Infof("Sever starting serving REST(https)  at: %s", tlsListener.Addr())
 		if err := httpsServer.Serve(tlsListener); err != nil && err != http.ErrServerClosed {
 			s.logger.Fatalf("%v", err)
