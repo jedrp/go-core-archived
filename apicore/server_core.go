@@ -116,10 +116,6 @@ func NewCoreServer(ctx context.Context,
 }
 
 func (s *CoreServer) StartServing(ctx context.Context) error {
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
 	s.logger.Infof("Sever start with REST_PORT: %v; GRPC_PORT: %v; SCHEME: %s; DISABLE_REST: %v; DISABLE_GRPC: %v;",
 		s.GetPort(),
 		s.GrpcPort,
@@ -178,6 +174,8 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 					Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
 				}
 			}
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt)
 			go func() {
 				for range c {
 					s.logger.Info("shutting down server...")
@@ -209,18 +207,6 @@ func (s *CoreServer) StartServing(ctx context.Context) error {
 			if err != nil {
 				s.logger.Panicf("failed to listen: %v", err)
 			}
-			// Rest server already hanle interup itseft,
-			// Then just need to handle for grpc server
-			go func() {
-				for range c {
-					s.logger.Info("shutting down server...")
-
-					s.grpcServer.GracefulStop()
-
-					<-ctx.Done()
-				}
-			}()
-
 			s.logger.Infof("Sever starting serving gRPC at: %s\n", lis.Addr())
 			if e = s.grpcServer.Serve(lis); e != nil {
 				log.Fatalf("failed to serve: %s", e)
