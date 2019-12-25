@@ -113,7 +113,7 @@ func (s *CoreServerV2) StartServing(ctx context.Context) error {
 	if s.GRPCPort > 1 && s.RESTPort < 1 {
 		// enable only grp
 		return s.serveGRPCAPI()
-	} else if s.GRPCPort > 1 && s.RESTPort < 1 {
+	} else if s.GRPCPort < 1 && s.RESTPort > 1 {
 		// enable only rest
 		return s.serveRESTAPI()
 
