@@ -118,12 +118,13 @@ func (s *CoreServerV2) StartServing(ctx context.Context) error {
 		return s.serveRESTAPI()
 
 	} else {
-		interrupt := make(chan os.Signal, 1)
-		signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
-		defer signal.Stop(interrupt)
 
-		g, ctx := errgroup.WithContext(ctx)
 		if s.GRPCPort != s.RESTPort {
+			interrupt := make(chan os.Signal, 1)
+			signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+			defer signal.Stop(interrupt)
+
+			g, ctx := errgroup.WithContext(ctx)
 			// run grpc and rest on difference ports
 			g.Go(func() error {
 				return s.serveGRPCAPI()
@@ -131,25 +132,26 @@ func (s *CoreServerV2) StartServing(ctx context.Context) error {
 			g.Go(func() error {
 				return s.serveRESTAPI()
 			})
+			select {
+			case <-interrupt:
+				break
+			case <-ctx.Done():
+				break
+			}
+			if s.grpcServer != nil {
+				s.grpcServer.GracefulStop()
+			}
+			shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer shutdownCancel()
+			if s.restServer != nil {
+				_ = s.restServer.Shutdown(shutdownCtx)
+			}
 
 		} else {
 			// run grpc and rest in shared port mode
 			s.serveGRPCAndRESTInSharedPortMode()
 		}
-		select {
-		case <-interrupt:
-			break
-		case <-ctx.Done():
-			break
-		}
-		if s.grpcServer != nil {
-			s.grpcServer.GracefulStop()
-		}
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer shutdownCancel()
-		if s.restServer != nil {
-			_ = s.restServer.Shutdown(shutdownCtx)
-		}
+
 	}
 	return nil
 }
@@ -201,6 +203,14 @@ func (s *CoreServerV2) serveGRPCAndRESTInSharedPortMode() error {
 			Handler: h2c.NewHandler(s.getHandlerFunc(), &http2.Server{}),
 		}
 	}
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			s.logger.Info("shutting down server...")
+			server.Close()
+		}
+	}()
 	s.logger.Infof("Sever starting serving both REST and gRPC at: %s\n", l.Addr())
 
 	s.restServer = server
@@ -233,6 +243,7 @@ func (s *CoreServerV2) serveRESTAPI() error {
 		}
 		httpServer.Handler = s.restHandler
 		s.restServer = httpServer
+		s.logger.Infof("Sever starting serving REST(http)  at: %s", listener.Addr())
 		if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 			s.logger.Fatalf("%v", err)
 			return err
@@ -321,12 +332,13 @@ func (s *CoreServerV2) serveRESTAPI() error {
 		// must have at least one certificate or panics
 		httpsServer.TLSConfig.BuildNameToCertificate()
 		s.restServer = httpsServer
+		s.logger.Infof("Sever starting serving REST(https)  at: %s", tlsListener.Addr())
 		if err := httpsServer.Serve(tlsListener); err != nil && err != http.ErrServerClosed {
 			s.logger.Fatalf("%v", err)
 			return err
 		}
 	default:
-		return fmt.Errorf("Scheme %s not supported", s.listenScheme)
+		return fmt.Errorf("scheme %s not supported", s.listenScheme)
 	}
 	return nil
 }
