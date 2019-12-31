@@ -1,11 +1,14 @@
 package cqrs
 
 import (
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/jedrp/go-core/plresult"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"fmt"
-	"reflect"
 
 	st "github.com/golang/protobuf/ptypes/struct"
 )
@@ -106,6 +109,20 @@ func ToValue(v interface{}) *st.Value {
 				NumberValue: float64(v),
 			},
 		}
+	case json.Number:
+		if s, err := strconv.ParseFloat(string(v), 64); err == nil {
+			return &st.Value{
+				Kind: &st.Value_NumberValue{
+					NumberValue: s,
+				},
+			}
+		}
+		return &st.Value{
+			Kind: &st.Value_NumberValue{
+				NumberValue: 0,
+			},
+		}
+
 	case float64:
 		return &st.Value{
 			Kind: &st.Value_NumberValue{
