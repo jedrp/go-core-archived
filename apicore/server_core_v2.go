@@ -27,6 +27,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 type CoreServerV2 struct {
@@ -73,17 +74,20 @@ func NewCoreServerV2(ctx context.Context,
 	formats := strfmt.Default
 	var grpcServer *grpc.Server
 
-	grpcOpts := []grpc.ServerOption{grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-		UnaryServerRequestContextInterceptor(),
-		UnaryServerPanicInterceptor(logger),
-		UnaryValidatorServerInterceptor(formats, logger),
-	)), grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-		StreamServerRequestInterceptor(),
-		grpc_recovery.StreamServerInterceptor(
-			grpc_recovery.WithRecoveryHandlerContext(getRecoveryHandlerFuncContextHandler(logger)),
-		),
-		StreamValidatorServerInterceptor(formats, logger),
-	))}
+	grpcOpts := []grpc.ServerOption{grpc.KeepaliveParams(keepalive.ServerParameters{
+		MaxConnectionIdle: 5 * time.Minute, // https://stackoverflow.com/questions/52993259/problem-with-grpc-setup-getting-an-intermittent-rpc-unavailable-error/54703234#54703234
+	}),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			UnaryServerRequestContextInterceptor(),
+			UnaryServerPanicInterceptor(logger),
+			UnaryValidatorServerInterceptor(formats, logger),
+		)), grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			StreamServerRequestInterceptor(),
+			grpc_recovery.StreamServerInterceptor(
+				grpc_recovery.WithRecoveryHandlerContext(getRecoveryHandlerFuncContextHandler(logger)),
+			),
+			StreamValidatorServerInterceptor(formats, logger),
+		))}
 
 	if coreServer.TLSCertificate != "" || coreServer.TLSCertificateKey != "" {
 		coreServer.enbaleTLSSetting = true
